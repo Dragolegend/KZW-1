@@ -7,9 +7,9 @@
 #include <chrono>
 
 struct Task{
-    int R;
-    int P;
-    int Q;
+    int time;
+    int weight;
+    int max_time;
     int n;
 };
 
@@ -23,7 +23,7 @@ class Resolver{
         std::vector <std::string> strings;
         int startIndex = 0, endIndex = 0;
         for (int i = 0; i <= str.size(); i++) {
-
+            
             if (str[i] == separator || i == str.size()) {
                 endIndex = i;
                 std::string temp;
@@ -45,19 +45,18 @@ class Resolver{
             std::string line;
             int count = 1;
             while (std::getline(inputFile, line)) {
-               
-                std::vector<std::string> parts = custom_split(line, ' ');
 
+                std::vector<std::string> parts = custom_split(line, ' ');
+                
                 if(parts.size() == 3){
                     Task tmp;
-                    tmp.R = stoi(parts.at(0));
-                    tmp.P = stoi(parts.at(1));
-                    tmp.Q = stoi(parts.at(2));
+                    tmp.time = stoi(parts.at(0));
+                    tmp.weight = stoi(parts.at(1));
+                    tmp.max_time = stoi(parts.at(2));
                     tmp.n = count++;
 
                     tasks.push_back(tmp);
                 }
-                
             }
 
             inputFile.close();
@@ -67,7 +66,7 @@ class Resolver{
     void print_tasks(std::vector <Task> tasks) {
         std::cout << "\n\n\n";
         for(Task e : tasks){
-            std::cout << "R: " << e.R << " P: " << e.P << " Q: " << e.Q <<  " n: " << e.n << "\n";
+            std::cout << "Time: " << e.time << " Weight: " << e.weight << " Max time: " << e.max_time <<  " n: " << e.n << "\n";
         }
 
         std::cout << "\nOrder: ";
@@ -78,19 +77,38 @@ class Resolver{
         std::cout << "\n\n\n";
     }
 
-    std::vector <Task> resolve_tasks_sortR() {
-        std::vector <Task> tmp = tasks;
+    int penalty(std::vector <Task> tasks){
+        int time = 0;
+        int penalty = 0;
 
-        std::sort( tmp.begin( ), tmp.end( ), [ ]( const auto& lhs, const auto& rhs )
-        {
-            return lhs.R < rhs.R;
-        });
+        for(int i = 0; i < tasks.size(); ++i){
+            time += tasks.at(i).time;
+            if(tasks.at(i).max_time < time){
+                penalty += tasks.at(i).weight * (time - tasks.at(i).max_time);
+            }
+        }
 
-        return tmp;
+        return penalty;
     }
-    
-    std::vector <Task> resolve2() {
-        std::vector <Task> tmp = resolve_tasks_sortR();
+
+    int penalty2(std::vector <Task> tasks, std::string mask){
+        int time = 0;
+        int penalty = 0;
+
+        for(int i = 0; i < tasks.size(); ++i){
+            if(mask.at(i) == '1'){           
+                time += tasks.at(i).time;
+                if(tasks.at(i).max_time < time){
+                    penalty += tasks.at(i).weight * (time - tasks.at(i).max_time);
+                }
+            }
+        }
+
+        return penalty;
+    }
+
+    std::vector<Task> random(std::vector<Task> tasks){
+        std::vector <Task> tmp = tasks;
         std::vector <Task> best = tmp;
             
         std::random_device rd; 
@@ -103,89 +121,17 @@ class Resolver{
   
             shuffle(tmp.begin(), tmp.end(), g); 
             
-            if(Cmax(best) > Cmax(tmp)){
+            if(penalty(best) > penalty(tmp)){
                 best = tmp;
-                std::cout << Cmax(tmp) << "\n";
+                std::cout << penalty(tmp) << "\n";
             }
         }
         
         return best;
-    }
-
-    std::vector <Task> search(std::vector <Task> tmp, std::vector <Task> best, int k_max){
-        for(int i = 0; i < tmp.size(); ++i){
-                for(int j = 1; j < tmp.size(); ++j){
-                    tmp = best;
-
-                    Task temp;
-                    for(int k = 0; k <= k_max; ++k){
-                        if(j >= k){                
-                            temp = tmp.at(i);
-                            tmp.at(i) = tmp.at(j - k);
-                            tmp.at(j - k) = temp;
-
-                            if(Cmax(best) > Cmax(tmp)){
-                                best = tmp;
-                                std::cout << Cmax(tmp) << "\n";
-                            }
-                        }
-                    }
-                }
-            }
-
-            return best;
-    }
-    
-    std::vector <Task> resolve(int index) {
-        std::vector <Task> tmp = resolve_tasks_sortR();
-        std::vector <Task> best = tmp;
-        
-        
-        if(index == 0){
-            best = search(tmp, best, 1);
-        }
-        
-        if(index == 3){
-            best = search(tmp, best, 3);
-        }
-        
-        if(index == 2){
-            best = search(tmp, best, 5);
-            
-            best = search(tmp, best, 3);
-        
-            best = search(tmp, best, 2);
-        
-            best = search(tmp, best, 0);
-        }
-        
-        std::cout << Cmax(best);
-        return best;
-    }
-    
-    std::vector <Task> resolve_tasks_sortRQ() {
-        std::vector <Task> tmp = tasks;
-
-        std::sort( tmp.begin( ), tmp.end( ), [ ]( const auto& lhs, const auto& rhs )
-        {
-            return (lhs.R * lhs.Q) < (rhs.R * rhs.Q);
-        });
-
-        return tmp;
-    }
-    
-    int Cmax(std::vector<Task> result){
-        int t=0,
-            u=0;
-        for (int i = 0; i < result.size(); i++){
-            t=std::max(t,result.at(i).R)+result.at(i).P;
-            u=std::max(u,t+result.at(i).Q);
-        }
-        return u;
     }
 
     Resolver(){
-        files = {"./data1.txt", "./data2.txt", "./data3.txt", "./data4.txt"};
+        files = {"./data.10", "./data.11", "./data.12", "./data.13", "./data.14", "./data.15", "./data.16", "./data.17", "./data.18", "./data.19" , "./data.20"};
     }
 
 };
@@ -193,31 +139,25 @@ class Resolver{
 
 
 int main(){
-    int CmaxSum = 0;
     
     auto start = std::chrono::high_resolution_clock::now();
+    
     Resolver r1;
-    std::cout << "\n\n\n";
-    int index = 0;
 
-    for(std::string path : r1.files){
-        r1.load_data(path);
-        std::vector<Task> tasks;
-        if(path == "./data2.txt"){
-            tasks = r1.resolve2();
-        }else{
-            tasks = r1.resolve(index);
-        }
+    for(std::string x : r1.files){
+        r1.load_data(x);
+        std::vector<Task> tasks = r1.random(r1.tasks);
+
         r1.print_tasks(tasks);
-        CmaxSum += r1.Cmax(tasks);
-        
-        ++index;
+
+        std::cout << "Penalty: " << r1.penalty(tasks) << "\n\n\n";
     }
-    
-    
+
+    r1.load_data("./data.10");
+    std::cout << "Penalty: " << r1.penalty2(r1.tasks, "1100111001") << "\n\n\n";
+
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
  
     std::cout << "Execution time(microseconds): " << duration.count() << "\n";
-    std::cout << "Total Cmax: " << CmaxSum;
 }
